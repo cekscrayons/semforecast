@@ -23,36 +23,10 @@ st.markdown("""
 .stSidebar {
     background-color: #1a1a1a;
 }
-/* Reduce sidebar text size */
-.stSidebar .stMarkdown {
-    font-size: 0.9rem;
-}
-/* Hover tooltips */
-.stSlider > div > div > div > div {
-    position: relative;
-}
-.stSlider > div > div > div > div::after {
-    content: attr(data-tooltip);
-    position: absolute;
-    top: -25px;
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: rgba(0,0,0,0.7);
-    color: white;
-    padding: 3px 8px;
-    border-radius: 4px;
-    font-size: 0.8rem;
-    white-space: nowrap;
-    opacity: 0;
-    transition: opacity 0.3s;
-}
-.stSlider > div > div > div > div:hover::after {
-    opacity: 1;
-}
 </style>
 """, unsafe_allow_html=True)
 
-# Mapping and visualization functions
+# Mapping function with clear, simple mappings
 def map_slider_to_value(slider_value, parameter_type):
     mappings = {
         'impression_share_growth': {
@@ -61,14 +35,14 @@ def map_slider_to_value(slider_value, parameter_type):
             'Aggressive': 2.0
         },
         'conversion_rate_sensitivity': {
-            'Conservative Market': 0.95,
-            'Balanced Market': 0.85,
-            'Competitive Market': 0.75
+            'Conservative': 0.95,
+            'Balanced': 0.85,
+            'Competitive': 0.75
         },
         'diminishing_returns': {
-            'Low Impact': 0.95,
-            'Moderate Impact': 0.85,
-            'High Impact': 0.75
+            'Low': 0.95,
+            'Moderate': 0.85,
+            'High': 0.75
         }
     }
     return mappings[parameter_type][slider_value]
@@ -134,25 +108,13 @@ st.title("SEM Budget Forecasting Tool")
 with st.sidebar:
     st.header("Forecast Configuration")
     
-    # Core parameters with minimal text
-    min_roas = st.slider(
-        "ROAS Threshold", 10, 30, 20, 1, 
-        help="Minimum Return on Ad Spend threshold"
-    )
-    growth_factor = st.slider(
-        "YOY Growth", 0, 30, 10, 1, 
-        help="Year-over-Year Growth Percentage"
-    ) / 100 + 1.0
-    aov_growth = st.slider(
-        "AOV Growth", 0, 20, 5, 1, 
-        help="Average Order Value Growth"
-    ) / 100 + 1.0
-    cpc_inflation = st.slider(
-        "CPC Inflation", 0, 15, 2, 1, 
-        help="Cost Per Click Inflation Rate"
-    ) / 100 + 1.0
+    # Core parameters
+    min_roas = st.slider("ROAS Threshold", 10, 30, 20, 1)
+    growth_factor = st.slider("YOY Growth", 0, 30, 10, 1) / 100 + 1.0
+    aov_growth = st.slider("AOV Growth", 0, 20, 5, 1) / 100 + 1.0
+    cpc_inflation = st.slider("CPC Inflation", 0, 15, 2, 1) / 100 + 1.0
     
-    # Advanced options with minimal text
+    # Advanced options with categorical sliders
     impression_share_growth = st.select_slider(
         "Impression Share", 
         options=['Conservative', 'Moderate', 'Aggressive'],
@@ -188,16 +150,27 @@ if st.button("Generate Forecast"):
                 yoy_aov_growth=aov_growth
             )
             
-            # Add new parameter mappings
-            model.impression_share_multiplier = map_slider_to_value(
-                impression_share_growth, 'impression_share_growth'
-            )
-            model.conversion_rate_sensitivity = map_slider_to_value(
-                conversion_rate_sensitivity, 'conversion_rate_sensitivity'
-            )
-            model.diminishing_returns_factor = map_slider_to_value(
-                diminishing_returns, 'diminishing_returns'
-            )
+            # Add new parameter mappings with error handling
+            try:
+                is_multiplier = map_slider_to_value(
+                    impression_share_growth, 'impression_share_growth'
+                )
+                conv_sensitivity = map_slider_to_value(
+                    conversion_rate_sensitivity, 'conversion_rate_sensitivity'
+                )
+                dim_returns = map_slider_to_value(
+                    diminishing_returns, 'diminishing_returns'
+                )
+                
+                # Dynamically add attributes if the model supports them
+                if hasattr(model, 'impression_share_multiplier'):
+                    model.impression_share_multiplier = is_multiplier
+                if hasattr(model, 'conversion_rate_sensitivity'):
+                    model.conversion_rate_sensitivity = conv_sensitivity
+                if hasattr(model, 'diminishing_returns_factor'):
+                    model.diminishing_returns_factor = dim_returns
+            except Exception as mapping_error:
+                st.warning(f"Could not apply advanced parameters: {mapping_error}")
             
             # Run forecast
             forecast = model.run_forecast()
