@@ -48,38 +48,45 @@ def map_slider_to_value(slider_value, parameter_type):
     return mappings[parameter_type][slider_value]
 
 def create_comparison_chart(historical_data, forecast_data, metric):
-    # Combine historical and forecast data
+    # Prepare historical data
     historical = historical_data[['Week', metric]].copy()
-    historical['Type'] = 'Historical'
+    historical['Type'] = 'Actual'
     
+    # Prepare forecast data
     forecast = forecast_data[['Week', 'Weekly_Budget' if metric == 'Cost' else 'Projected_Revenue']].copy()
+    forecast = forecast.rename(columns={'Weekly_Budget' if metric == 'Cost' else 'Projected_Revenue': metric})
     forecast['Type'] = 'Forecast'
+    
+    # Combine datasets
+    combined_data = pd.concat([historical, forecast])
     
     # Create Plotly figure
     fig = go.Figure()
     
-    # Historical data (light grey)
+    # Actual data (light grey)
+    actual_data = combined_data[combined_data['Type'] == 'Actual']
     fig.add_trace(go.Scatter(
-        x=historical['Week'], 
-        y=historical[metric],
+        x=range(1, len(actual_data) + 1),  # Week 1-52 numbering
+        y=actual_data[metric],
         mode='lines',
-        name='Historical',
+        name='Actual',
         line=dict(color='#666666', width=2)
     ))
     
     # Forecast data (bright green)
+    forecast_data = combined_data[combined_data['Type'] == 'Forecast']
     fig.add_trace(go.Scatter(
-        x=forecast['Week'], 
-        y=forecast['Weekly_Budget' if metric == 'Cost' else 'Projected_Revenue'],
+        x=range(len(actual_data) + 1, len(combined_data) + 1),  # Continuing week numbering
+        y=forecast_data[metric],
         mode='lines',
         name='Forecast',
-        line=dict(color='#42f554', width=3, dash='dot')
+        line=dict(color='#42f554', width=3)
     ))
     
     # Customize layout
     fig.update_layout(
         title=f'Historical vs Forecasted Weekly {metric.capitalize()}',
-        xaxis_title='Week',
+        xaxis_title='Week No.',
         yaxis_title=f'{metric.capitalize()} ($)',
         plot_bgcolor='rgba(0,0,0,0)',
         paper_bgcolor='rgba(0,0,0,0)',
