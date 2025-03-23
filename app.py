@@ -14,7 +14,7 @@ st.set_page_config(
     page_icon="📊"
 )
 
-# Custom CSS for improved dark theme and UX
+# Custom CSS for improved dark theme
 st.markdown("""
 <style>
 .stApp {
@@ -26,7 +26,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Mapping function with clear, simple mappings
+# Mapping function
 def map_slider_to_value(slider_value, parameter_type):
     mappings = {
         'impression_share_growth': {
@@ -47,20 +47,19 @@ def map_slider_to_value(slider_value, parameter_type):
     }
     return mappings[parameter_type][slider_value]
 
+# Smooth chart creation function
 def create_smooth_comparison_chart(historical_data, forecast_data, metric):
-    # Prepare data for plotting
+    # Prepare historical data
     historical = historical_data[['Week', metric]].copy()
     historical['Type'] = 'Historical'
     
-    forecast = forecast_data[['Week', f'Projected_{metric.capitalize()}']].copy()
+    # Prepare forecast data
+    forecast = forecast_data[['Week', 'Weekly_Budget' if metric == 'Cost' else 'Projected_Revenue']].copy()
     forecast['Type'] = 'Forecast'
     
     # Rename columns for consistency
     historical.columns = ['Week', 'Value', 'Type']
     forecast.columns = ['Week', 'Value', 'Type']
-    
-    # Combine datasets
-    combined_data = pd.concat([historical, forecast])
     
     # Create Plotly figure with smooth lines
     fig = go.Figure()
@@ -104,15 +103,15 @@ def create_smooth_comparison_chart(historical_data, forecast_data, metric):
 # Main Streamlit app
 st.title("SEM Budget Forecasting Tool")
 
-# Sidebar with simplified controls
+# Sidebar for model parameters
 with st.sidebar:
     st.header("Forecast Configuration")
     
-    # Core parameters
-    min_roas = st.slider("ROAS Threshold", 10, 30, 20, 1)
-    growth_factor = st.slider("YOY Growth", 0, 30, 10, 1) / 100 + 1.0
-    aov_growth = st.slider("AOV Growth", 0, 20, 5, 1) / 100 + 1.0
-    cpc_inflation = st.slider("CPC Inflation", 0, 15, 2, 1) / 100 + 1.0
+    # Core parameters with sliders
+    min_roas = st.slider("Minimum ROAS Threshold ($)", 10, 30, 20, 1)
+    growth_factor = st.slider("YOY Growth Factor (%)", 0, 30, 10, 1) / 100 + 1.0
+    aov_growth = st.slider("YOY AOV Growth (%)", 0, 20, 5, 1) / 100 + 1.0
+    cpc_inflation = st.slider("YOY CPC Inflation (%)", 0, 15, 2, 1) / 100 + 1.0
     
     # Advanced options with categorical sliders
     impression_share_growth = st.select_slider(
@@ -138,7 +137,7 @@ uploaded_file = st.file_uploader("Upload CSV with historical SEM data", type=['c
 if st.button("Generate Forecast"):
     if uploaded_file is not None:
         try:
-            # Load data
+            # Load data using the model's data loading function
             data = load_data_from_csv(uploaded_file)
             
             # Initialize and run forecast model
@@ -150,7 +149,7 @@ if st.button("Generate Forecast"):
                 yoy_aov_growth=aov_growth
             )
             
-            # Add new parameter mappings with error handling
+            # Add new parameter mappings
             try:
                 is_multiplier = map_slider_to_value(
                     impression_share_growth, 'impression_share_growth'
@@ -191,7 +190,7 @@ if st.button("Generate Forecast"):
             st.write("Summary Statistics:")
             st.write(summary)
             
-            # Download forecast
+            # Create download button for forecast
             csv_buffer = io.StringIO()
             forecast.to_csv(csv_buffer, index=False)
             csv_str = csv_buffer.getvalue()
