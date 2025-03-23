@@ -159,17 +159,17 @@ if st.button("Generate Forecast"):
             except Exception as mapping_error:
                 st.warning(f"Could not apply advanced parameters: {mapping_error}")
             
-            # Run forecast
-            forecast = model.run_forecast()
-            
-            # Display charts
-            col1, col2 = st.columns(2)
-            
-    with col1:
+# Run forecast
+forecast = model.run_forecast()
+
+# Display charts
+col1, col2 = st.columns(2)
+
+with col1:
     spend_chart = create_comparison_chart(data, forecast, 'Cost')
     st.plotly_chart(spend_chart, use_container_width=True)
 
-    with col2:
+with col2:
     revenue_chart = create_comparison_chart(data, forecast, 'Revenue')
     st.plotly_chart(revenue_chart, use_container_width=True)
             
