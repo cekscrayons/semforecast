@@ -47,44 +47,34 @@ def map_slider_to_value(slider_value, parameter_type):
     }
     return mappings[parameter_type][slider_value]
 
-def create_smooth_comparison_chart(historical_data, forecast_data, metric):
-    # Prepare data for plotting
+def create_comparison_chart(historical_data, forecast_data, metric):
+    # Combine historical and forecast data
     historical = historical_data[['Week', metric]].copy()
     historical['Type'] = 'Historical'
     
-    # Prepare forecast data
     forecast = forecast_data[['Week', 'Weekly_Budget' if metric == 'Cost' else 'Projected_Revenue']].copy()
     forecast['Type'] = 'Forecast'
-    
-    # Combine datasets
-    combined_data = pd.concat([historical, forecast])
     
     # Create Plotly figure
     fig = go.Figure()
     
     # Historical data (light grey)
-    historical_trace = go.Scatter(
+    fig.add_trace(go.Scatter(
         x=historical['Week'], 
-        y=historical[metric], 
-        mode='lines', 
-        name='Historical', 
-        line=dict(color='#888888', width=2),
-        hovertemplate='%{y:.2f}<extra></extra>'
-    )
+        y=historical[metric],
+        mode='lines',
+        name='Historical',
+        line=dict(color='#666666', width=2)
+    ))
     
     # Forecast data (bright green)
-    forecast_trace = go.Scatter(
+    fig.add_trace(go.Scatter(
         x=forecast['Week'], 
-        y=forecast['Weekly_Budget' if metric == 'Cost' else 'Projected_Revenue'], 
-        mode='lines', 
-        name='Forecast', 
-        line=dict(color='#42f554', width=3),
-        hovertemplate='%{y:.2f}<extra></extra>'
-    )
-    
-    # Add both traces
-    fig.add_trace(historical_trace)
-    fig.add_trace(forecast_trace)
+        y=forecast['Weekly_Budget' if metric == 'Cost' else 'Projected_Revenue'],
+        mode='lines',
+        name='Forecast',
+        line=dict(color='#42f554', width=3, dash='dot')
+    ))
     
     # Customize layout
     fig.update_layout(
@@ -93,8 +83,7 @@ def create_smooth_comparison_chart(historical_data, forecast_data, metric):
         yaxis_title=f'{metric.capitalize()} ($)',
         plot_bgcolor='rgba(0,0,0,0)',
         paper_bgcolor='rgba(0,0,0,0)',
-        font_color='white',
-        legend_title_text='Type'
+        font_color='white'
     )
     
     return fig
@@ -176,13 +165,13 @@ if st.button("Generate Forecast"):
             # Display charts
             col1, col2 = st.columns(2)
             
-            with col1:
-                spend_chart = create_smooth_comparison_chart(data, forecast, 'Cost')
-                st.plotly_chart(spend_chart, use_container_width=True)
-            
+           with col1:
+            spend_chart = create_comparison_chart(data, forecast, 'Cost')
+            st.plotly_chart(spend_chart, use_container_width=True)
+
             with col2:
-                revenue_chart = create_smooth_comparison_chart(data, forecast, 'Revenue')
-                st.plotly_chart(revenue_chart, use_container_width=True)
+            revenue_chart = create_comparison_chart(data, forecast, 'Revenue')
+            st.plotly_chart(revenue_chart, use_container_width=True)
             
             # Summary statistics
             summary = model.get_summary_stats()
