@@ -66,7 +66,7 @@ def create_comparison_chart(historical_data, forecast_data, metric):
     # Actual data (light grey)
     actual_data = combined_data[combined_data['Type'] == 'Actual']
     fig.add_trace(go.Scatter(
-        x=actual_data['Week'],  # Use actual Week column
+        x=actual_data['Week'], 
         y=actual_data[metric],
         mode='lines',
         name='Actual',
@@ -76,7 +76,7 @@ def create_comparison_chart(historical_data, forecast_data, metric):
     # Forecast data (bright green)
     forecast_data = combined_data[combined_data['Type'] == 'Forecast']
     fig.add_trace(go.Scatter(
-        x=forecast_data['Week'],  # Use actual Week column
+        x=forecast_data['Week'], 
         y=forecast_data[metric],
         mode='lines',
         name='Forecast',
@@ -169,6 +169,15 @@ if st.button("Generate Forecast"):
             # Run forecast
             forecast = model.run_forecast()
             
+            # Display forecast preview
+            st.subheader("Forecast Preview")
+            st.dataframe(forecast.head())
+            
+            # Get summary statistics
+            summary = model.get_summary_stats()
+            st.write("Summary Statistics:")
+            st.write(summary)
+            
             # Display charts
             col1, col2 = st.columns(2)
             
@@ -179,11 +188,6 @@ if st.button("Generate Forecast"):
             with col2:
                 revenue_chart = create_comparison_chart(data, forecast, 'Revenue')
                 st.plotly_chart(revenue_chart, use_container_width=True)
-            
-            # Summary statistics
-            summary = model.get_summary_stats()
-            st.write("Summary Statistics:")
-            st.write(summary)
             
             # Create download button for forecast
             csv_buffer = io.StringIO()
