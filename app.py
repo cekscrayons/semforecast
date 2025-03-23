@@ -66,7 +66,7 @@ def create_comparison_chart(historical_data, forecast_data, metric):
     # Actual data (light grey)
     actual_data = combined_data[combined_data['Type'] == 'Actual']
     fig.add_trace(go.Scatter(
-        x=range(1, len(actual_data) + 1),  # Week 1-52 numbering
+        x=actual_data['Week'],  # Use actual Week column
         y=actual_data[metric],
         mode='lines',
         name='Actual',
@@ -76,7 +76,7 @@ def create_comparison_chart(historical_data, forecast_data, metric):
     # Forecast data (bright green)
     forecast_data = combined_data[combined_data['Type'] == 'Forecast']
     fig.add_trace(go.Scatter(
-        x=range(len(actual_data) + 1, len(combined_data) + 1),  # Continuing week numbering
+        x=forecast_data['Week'],  # Use actual Week column
         y=forecast_data[metric],
         mode='lines',
         name='Forecast',
@@ -86,7 +86,7 @@ def create_comparison_chart(historical_data, forecast_data, metric):
     # Customize layout
     fig.update_layout(
         title=f'Historical vs Forecasted Weekly {metric.capitalize()}',
-        xaxis_title='Week No.',
+        xaxis_title='Week',
         yaxis_title=f'{metric.capitalize()} ($)',
         plot_bgcolor='rgba(0,0,0,0)',
         paper_bgcolor='rgba(0,0,0,0)',
