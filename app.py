@@ -7,14 +7,14 @@ import plotly.express as px
 # Import the forecast model
 from sem_forecast_model import SEMForecastModel, load_data_from_csv
 
-# Custom styling
+# Page configuration
 st.set_page_config(
     page_title="SEM Forecast Model", 
     layout="wide", 
     page_icon="📊"
 )
 
-# Custom CSS for dark theme
+# Custom CSS for improved dark theme and UX
 st.markdown("""
 <style>
 .stApp {
@@ -23,10 +23,36 @@ st.markdown("""
 .stSidebar {
     background-color: #1a1a1a;
 }
+/* Reduce sidebar text size */
+.stSidebar .stMarkdown {
+    font-size: 0.9rem;
+}
+/* Hover tooltips */
+.stSlider > div > div > div > div {
+    position: relative;
+}
+.stSlider > div > div > div > div::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    top: -25px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(0,0,0,0.7);
+    color: white;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+.stSlider > div > div > div > div:hover::after {
+    opacity: 1;
+}
 </style>
 """, unsafe_allow_html=True)
 
-# Mapping function for slider values
+# Mapping and visualization functions
 def map_slider_to_value(slider_value, parameter_type):
     mappings = {
         'impression_share_growth': {
@@ -47,32 +73,56 @@ def map_slider_to_value(slider_value, parameter_type):
     }
     return mappings[parameter_type][slider_value]
 
-# Visualization function
-def create_spend_comparison_chart(historical_data, forecast_data):
+def create_smooth_comparison_chart(historical_data, forecast_data, metric):
     # Prepare data for plotting
-    historical_spend = historical_data[['Week', 'Cost']].rename(columns={'Cost': 'Spend'})
-    historical_spend['Type'] = 'Historical'
+    historical = historical_data[['Week', metric]].copy()
+    historical['Type'] = 'Historical'
     
-    forecast_spend = forecast_data[['Week', 'Weekly_Budget']].rename(columns={'Weekly_Budget': 'Spend'})
-    forecast_spend['Type'] = 'Forecast'
+    forecast = forecast_data[['Week', f'Projected_{metric.capitalize()}']].copy()
+    forecast['Type'] = 'Forecast'
+    
+    # Rename columns for consistency
+    historical.columns = ['Week', 'Value', 'Type']
+    forecast.columns = ['Week', 'Value', 'Type']
     
     # Combine datasets
-    combined_spend = pd.concat([historical_spend, forecast_spend])
+    combined_data = pd.concat([historical, forecast])
     
-    # Create Plotly figure
-    fig = px.line(combined_spend, x='Week', y='Spend', color='Type', 
-                  title='Historical vs Forecasted Weekly Spend',
-                  labels={'Spend': 'Weekly Budget ($)'},
-                  color_discrete_map={
-                      'Historical': '#4287f5',  # Blue for historical
-                      'Forecast': '#42f554'     # Green for forecast
-                  })
+    # Create Plotly figure with smooth lines
+    fig = go.Figure()
+    
+    # Historical data (light grey)
+    historical_trace = go.Scatter(
+        x=historical['Week'], 
+        y=historical['Value'], 
+        mode='lines', 
+        name='Historical', 
+        line=dict(color='#666666', width=2),
+        hovertemplate='%{y:.2f}<extra></extra>'
+    )
+    
+    # Forecast data (bright color)
+    forecast_trace = go.Scatter(
+        x=forecast['Week'], 
+        y=forecast['Value'], 
+        mode='lines', 
+        name='Forecast', 
+        line=dict(color='#42f554', width=3),
+        hovertemplate='%{y:.2f}<extra></extra>'
+    )
+    
+    fig.add_trace(historical_trace)
+    fig.add_trace(forecast_trace)
     
     # Customize layout
     fig.update_layout(
+        title=f'Historical vs Forecasted Weekly {metric.capitalize()}',
+        xaxis_title='Week',
+        yaxis_title=metric.capitalize(),
         plot_bgcolor='rgba(0,0,0,0)',
         paper_bgcolor='rgba(0,0,0,0)',
-        font_color='white'
+        font_color='white',
+        legend_title_text='Type'
     )
     
     return fig
@@ -80,45 +130,43 @@ def create_spend_comparison_chart(historical_data, forecast_data):
 # Main Streamlit app
 st.title("SEM Budget Forecasting Tool")
 
-# Sidebar for model parameters
+# Sidebar with simplified controls
 with st.sidebar:
     st.header("Forecast Configuration")
     
-    # Default parameters matching original PyCharm model
-    min_roas = st.slider("Minimum ROAS Threshold ($)", 10, 30, 20, 1)
-    growth_factor = st.slider("YOY Growth Factor (%)", 0, 30, 10, 1) / 100 + 1.0
-    aov_growth = st.slider("YOY AOV Growth (%)", 0, 20, 5, 1) / 100 + 1.0
-    cpc_inflation = st.slider("YOY CPC Inflation (%)", 0, 15, 2, 1) / 100 + 1.0
+    # Core parameters with minimal text
+    min_roas = st.slider(
+        "ROAS Threshold", 10, 30, 20, 1, 
+        help="Minimum Return on Ad Spend threshold"
+    )
+    growth_factor = st.slider(
+        "YOY Growth", 0, 30, 10, 1, 
+        help="Year-over-Year Growth Percentage"
+    ) / 100 + 1.0
+    aov_growth = st.slider(
+        "AOV Growth", 0, 20, 5, 1, 
+        help="Average Order Value Growth"
+    ) / 100 + 1.0
+    cpc_inflation = st.slider(
+        "CPC Inflation", 0, 15, 2, 1, 
+        help="Cost Per Click Inflation Rate"
+    ) / 100 + 1.0
     
-    # New categorical sliders with default values matching original model assumptions
+    # Advanced options with minimal text
     impression_share_growth = st.select_slider(
-        "Impression Share Growth", 
+        "Impression Share", 
         options=['Conservative', 'Moderate', 'Aggressive'],
-        value='Moderate',
-        help="Determines how quickly you can expand market share:\n"
-             "- Conservative: Minimal, careful growth\n"
-             "- Moderate: Balanced, steady expansion\n"
-             "- Aggressive: Rapid market share capture"
+        value='Moderate'
     )
-
     conversion_rate_sensitivity = st.select_slider(
-        "Conversion Rate Sensitivity", 
-        options=['Conservative Market', 'Balanced Market', 'Competitive Market'],
-        value='Balanced Market',
-        help="Describes market conditions affecting conversion rates:\n"
-             "- Conservative Market: Stable customer base, predictable conversions\n"
-             "- Balanced Market: Moderate competition, typical conversion fluctuations\n"
-             "- Competitive Market: High competition, more significant conversion challenges"
+        "Market Sensitivity", 
+        options=['Conservative', 'Balanced', 'Competitive'],
+        value='Balanced'
     )
-
     diminishing_returns = st.select_slider(
-        "Return on Incremental Spend", 
-        options=['Low Impact', 'Moderate Impact', 'High Impact'],
-        value='Moderate Impact',
-        help="Indicates how quickly additional spending yields smaller returns:\n"
-             "- Low Impact: Spending remains consistently effective\n"
-             "- Moderate Impact: Gradual decrease in returns\n"
-             "- High Impact: Rapid decline in spending efficiency"
+        "Return Impact", 
+        options=['Low', 'Moderate', 'High'],
+        value='Moderate'
     )
 
 # File uploader
@@ -128,12 +176,8 @@ uploaded_file = st.file_uploader("Upload CSV with historical SEM data", type=['c
 if st.button("Generate Forecast"):
     if uploaded_file is not None:
         try:
-            # Load data using the model's data loading function
+            # Load data
             data = load_data_from_csv(uploaded_file)
-            
-            # Display input data sample
-            st.subheader("Input Data Sample")
-            st.dataframe(data.head())
             
             # Initialize and run forecast model
             model = SEMForecastModel(
@@ -158,20 +202,23 @@ if st.button("Generate Forecast"):
             # Run forecast
             forecast = model.run_forecast()
             
-            # Display basic information about the forecast
-            st.success("Forecast Generated Successfully")
-            st.write(f"Total Weeks Forecasted: {len(forecast)}")
+            # Display charts
+            col1, col2 = st.columns(2)
             
-            # Get summary statistics
+            with col1:
+                spend_chart = create_smooth_comparison_chart(data, forecast, 'Cost')
+                st.plotly_chart(spend_chart, use_container_width=True)
+            
+            with col2:
+                revenue_chart = create_smooth_comparison_chart(data, forecast, 'Revenue')
+                st.plotly_chart(revenue_chart, use_container_width=True)
+            
+            # Summary statistics
             summary = model.get_summary_stats()
             st.write("Summary Statistics:")
             st.write(summary)
             
-            # Create spend comparison chart
-            forecast_chart = create_spend_comparison_chart(data, forecast)
-            st.plotly_chart(forecast_chart, use_container_width=True)
-            
-            # Create download button for forecast
+            # Download forecast
             csv_buffer = io.StringIO()
             forecast.to_csv(csv_buffer, index=False)
             csv_str = csv_buffer.getvalue()
