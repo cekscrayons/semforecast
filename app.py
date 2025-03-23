@@ -47,9 +47,8 @@ def map_slider_to_value(slider_value, parameter_type):
     }
     return mappings[parameter_type][slider_value]
 
-# Smooth chart creation function
 def create_smooth_comparison_chart(historical_data, forecast_data, metric):
-    # Prepare historical data
+    # Prepare data for plotting
     historical = historical_data[['Week', metric]].copy()
     historical['Type'] = 'Historical'
     
@@ -57,33 +56,33 @@ def create_smooth_comparison_chart(historical_data, forecast_data, metric):
     forecast = forecast_data[['Week', 'Weekly_Budget' if metric == 'Cost' else 'Projected_Revenue']].copy()
     forecast['Type'] = 'Forecast'
     
-    # Rename columns for consistency
-    historical.columns = ['Week', 'Value', 'Type']
-    forecast.columns = ['Week', 'Value', 'Type']
+    # Combine datasets
+    combined_data = pd.concat([historical, forecast])
     
-    # Create Plotly figure with smooth lines
+    # Create Plotly figure
     fig = go.Figure()
     
     # Historical data (light grey)
     historical_trace = go.Scatter(
         x=historical['Week'], 
-        y=historical['Value'], 
+        y=historical[metric], 
         mode='lines', 
         name='Historical', 
-        line=dict(color='#666666', width=2),
+        line=dict(color='#888888', width=2),
         hovertemplate='%{y:.2f}<extra></extra>'
     )
     
-    # Forecast data (bright color)
+    # Forecast data (bright green)
     forecast_trace = go.Scatter(
         x=forecast['Week'], 
-        y=forecast['Value'], 
+        y=forecast['Weekly_Budget' if metric == 'Cost' else 'Projected_Revenue'], 
         mode='lines', 
         name='Forecast', 
         line=dict(color='#42f554', width=3),
         hovertemplate='%{y:.2f}<extra></extra>'
     )
     
+    # Add both traces
     fig.add_trace(historical_trace)
     fig.add_trace(forecast_trace)
     
@@ -91,7 +90,7 @@ def create_smooth_comparison_chart(historical_data, forecast_data, metric):
     fig.update_layout(
         title=f'Historical vs Forecasted Weekly {metric.capitalize()}',
         xaxis_title='Week',
-        yaxis_title=metric.capitalize(),
+        yaxis_title=f'{metric.capitalize()} ($)',
         plot_bgcolor='rgba(0,0,0,0)',
         paper_bgcolor='rgba(0,0,0,0)',
         font_color='white',
