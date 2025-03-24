@@ -14,35 +14,6 @@ st.set_page_config(
     page_icon="📊"
 )
 
-# Custom CSS for improved dark theme and controls
-st.markdown("""
-<style>
-.stApp {
-    background-color: #212121;
-}
-.stSidebar {
-    background-color: #1a1a1a;
-}
-/* Replace red with blue for sliders and other UI elements */
-[style*="color: red"] {
-    color: #1b79ff !important;
-}
-.stSlider > div > div > div {
-    background-color: #1b79ff !important;
-}
-/* Additional styling for buttons and interactive elements */
-.stButton>button {
-    color: #1b79ff;
-    border: 1px solid #1b79ff;
-    background-color: transparent;
-}
-.stButton>button:hover {
-    color: white;
-    background-color: #1b79ff !important;
-}
-</style>
-""", unsafe_allow_html=True)
-
 def create_comparison_chart(historical_data, forecast_data, metric):
     # Prepare historical data
     historical = historical_data[['Week', metric]].copy()
