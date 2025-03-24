@@ -23,24 +23,22 @@ st.markdown("""
 .stSidebar {
     background-color: #1a1a1a;
 }
-/* White slider */
-div[data-baseweb="slider"] {
-    -webkit-appearance: none;
-    background: transparent;
-}
-div[data-baseweb="slider"] [role="slider"] {
+/* Slider styling */
+.stSlider div[role="slider"] {
     background-color: white !important;
 }
-/* Remove red color from slider track and thumb */
-.stSlider > div > div > div > div {
+.stSlider div[data-baseweb="slider"] {
+    background-color: transparent !important;
+}
+.stSlider div[data-baseweb="slider"] div {
     background-color: white !important;
 }
-.stSlider > div > div > div > div > div {
+.stSlider .stSliderThumb {
     background-color: white !important;
+    border: 2px solid #1b79ff !important;
 }
-.stSlider > div > div > div > div > div[role="slider"] {
-    background-color: white !important;
-    border-color: white !important;
+.stSlider .stProgress {
+    background-color: #1b79ff !important;
 }
 /* Button styling */
 .stButton>button {
