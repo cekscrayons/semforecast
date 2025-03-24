@@ -23,9 +23,22 @@ st.markdown("""
 .stSidebar {
     background-color: #1a1a1a;
 }
-/* Specifically target and color the entire slider track */
-.stSlider > div > div > div[data-baseweb="slider"] {
-    background: linear-gradient(to right, #1b79ff 0%, #1b79ff 100%) !important;
+/* Replace red with blue for sliders and other UI elements */
+[style*="color: red"] {
+    color: #1b79ff !important;
+}
+.stSlider > div > div > div {
+    background-color: #1b79ff !important;
+}
+/* Additional styling for buttons and interactive elements */
+.stButton>button {
+    color: #1b79ff;
+    border: 1px solid #1b79ff;
+    background-color: transparent;
+}
+.stButton>button:hover {
+    color: white;
+    background-color: #1b79ff !important;
 }
 </style>
 """, unsafe_allow_html=True)
