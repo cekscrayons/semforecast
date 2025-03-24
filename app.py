@@ -23,26 +23,21 @@ st.markdown("""
 .stSidebar {
     background-color: #1a1a1a;
 }
-/* Specifically target and remove red */
-.stSlider > div > div > div[data-baseweb="slider"] {
+/* Specifically target slider track and progress */
+.stSlider > div > div > div {
     background-color: #1b79ff !important;
+    height: 6px !important;
 }
-.stSlider > div > div > div > div[role="slider"] {
+/* Slider thumb */
+.stSlider div[role="slider"] {
     background-color: white !important;
-    border-color: #1b79ff !important;
+    border: 2px solid #1b79ff !important;
 }
-.stSlider div[role="slider"] > div {
+/* Slider value label */
+.stSlider > div > div > div > div > div {
     background-color: white !important;
-}
-/* Button styling */
-.stButton>button {
-    color: #1b79ff;
-    border: 1px solid #1b79ff;
-    background-color: transparent;
-}
-.stButton>button:hover {
-    color: white;
-    background-color: #1b79ff !important;
+    color: #1b79ff !important;
+    border: 1px solid #1b79ff !important;
 }
 </style>
 """, unsafe_allow_html=True)
