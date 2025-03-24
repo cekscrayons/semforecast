@@ -214,7 +214,7 @@ if st.button("Generate Forecast"):
                             display_name, 
                             f"${forecast_value:.2f}", 
                             delta=f"{pct_change:.2f}%",
-                            delta_color='red' if pct_change < 0 else 'green'
+                            delta_color='inverse'
                         )
                     # Special handling for Clicks and Transactions (0 decimal places)
                     elif display_name in ['Annual Clicks', 'Annual Transactions']:
