@@ -14,7 +14,7 @@ st.set_page_config(
     page_icon="📊"
 )
 
-# Custom CSS for improved dark theme and white controls
+# Custom CSS for improved dark theme and controls
 st.markdown("""
 <style>
 .stApp {
@@ -23,7 +23,7 @@ st.markdown("""
 .stSidebar {
     background-color: #1a1a1a;
 }
-/* White slider and button styling */
+/* White slider */
 div[data-baseweb="slider"] {
     -webkit-appearance: none;
     background: transparent;
@@ -31,10 +31,11 @@ div[data-baseweb="slider"] {
 div[data-baseweb="slider"] [role="slider"] {
     background-color: white !important;
 }
+/* Button styling */
 .stButton>button {
-    color: white;
-    background-color: white;
-    border: none;
+    color: #1b79ff;
+    border: 1px solid #1b79ff;
+    background-color: transparent;
 }
 .stButton>button:hover {
     color: white;
@@ -234,16 +235,37 @@ if st.button("Generate Forecast"):
                 pct_change = ((forecast_value - historical_value) / historical_value) * 100
                 
                 with [col1, col2, col3, col4, col5][i]:
-                    st.metric(
-                        display_name, 
-                        f"{forecast_value:,.2f}", 
-                        delta=f"{pct_change:.2f}%",
-                        delta_color='inverse'
-                    )
+                    # Special handling for ROAS
+                    if display_name == 'Annual ROAS':
+                        forecast_value = forecast['Projected_Revenue'].sum() / forecast['Weekly_Budget'].sum()
+                        historical_value = data['Revenue'].sum() / data['Cost'].sum()
+                        pct_change = ((forecast_value - historical_value) / historical_value) * 100
+                        st.metric(
+                            display_name, 
+                            f"${forecast_value:.2f}", 
+                            delta=f"{pct_change:.2f}%",
+                            delta_color='inverse'
+                        )
+                    # Special handling for Clicks and Transactions (0 decimal places)
+                    elif display_name in ['Annual Clicks', 'Annual Transactions']:
+                        st.metric(
+                            display_name, 
+                            f"{forecast_value:,.0f}", 
+                            delta=f"{pct_change:.2f}%",
+                            delta_color='normal'
+                        )
+                    # Default handling for other metrics
+                    else:
+                        st.metric(
+                            display_name, 
+                            f"{forecast_value:,.2f}", 
+                            delta=f"{pct_change:.2f}%",
+                            delta_color='normal'
+                        )
             
             # Forecast preview with scrollable table
             st.subheader("Forecast Preview")
-            st.dataframe(forecast.head(10), height=300)
+            st.dataframe(forecast, height=400)
             
             # Display charts
             col1, col2 = st.columns(2)
