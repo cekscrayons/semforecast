@@ -31,6 +31,17 @@ div[data-baseweb="slider"] {
 div[data-baseweb="slider"] [role="slider"] {
     background-color: white !important;
 }
+/* Remove red color from slider track and thumb */
+.stSlider > div > div > div > div {
+    background-color: white !important;
+}
+.stSlider > div > div > div > div > div {
+    background-color: white !important;
+}
+.stSlider > div > div > div > div > div[role="slider"] {
+    background-color: white !important;
+    border-color: white !important;
+}
 /* Button styling */
 .stButton>button {
     color: #1b79ff;
