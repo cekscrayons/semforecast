@@ -9,12 +9,12 @@ from sem_forecast_model import SEMForecastModel, load_data_from_csv
 
 # Page configuration
 st.set_page_config(
-    page_title="SEM Forecast Model", 
+    page_title="Annual SEM Budget Forecasting Tool", 
     layout="wide", 
     page_icon="📊"
 )
 
-# Custom CSS for improved dark theme and white sliders
+# Custom CSS for improved dark theme and white controls
 st.markdown("""
 <style>
 .stApp {
@@ -23,13 +23,22 @@ st.markdown("""
 .stSidebar {
     background-color: #1a1a1a;
 }
-/* White slider */
+/* White slider and button styling */
 div[data-baseweb="slider"] {
     -webkit-appearance: none;
     background: transparent;
 }
 div[data-baseweb="slider"] [role="slider"] {
     background-color: white !important;
+}
+.stButton>button {
+    color: white;
+    background-color: white;
+    border: none;
+}
+.stButton>button:hover {
+    color: white;
+    background-color: #1b79ff !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -38,18 +47,18 @@ div[data-baseweb="slider"] [role="slider"] {
 def map_slider_to_value(slider_value, parameter_type):
     mappings = {
         'impression_share_growth': {
-            'Conservative': 1.1,
-            'Moderate': 1.5,
-            'Aggressive': 2.0
+            'Low': 1.1,
+            'Medium': 1.5,
+            'High': 2.0
         },
         'conversion_rate_sensitivity': {
-            'Conservative': 0.95,
-            'Balanced': 0.85,
-            'Competitive': 0.75
+            'Reducing': 0.95,
+            'Stable': 0.85,
+            'Increasing': 0.75
         },
         'diminishing_returns': {
             'Low': 0.95,
-            'Moderate': 0.85,
+            'Medium': 0.85,
             'High': 0.75
         }
     }
@@ -104,7 +113,14 @@ def create_comparison_chart(historical_data, forecast_data, metric):
     return fig
 
 # Main Streamlit app
-st.title("SEM Budget Forecasting Tool")
+st.title("Annual SEM Budget Forecasting Tool")
+
+# Add a brief explanation
+st.markdown("""
+This tool provides a comprehensive annual forecast for your SEM budget, 
+leveraging advanced machine learning techniques to project performance 
+based on historical data and configurable parameters.
+""")
 
 # Sidebar for model parameters
 with st.sidebar:
@@ -135,21 +151,21 @@ with st.sidebar:
     # Advanced options in an expander
     with st.expander("Advanced Options"):
         impression_share_growth = st.select_slider(
-            "Impression Share", 
-            options=['Conservative', 'Moderate', 'Aggressive'],
-            value='Moderate',
-            help="Controls how aggressively the model can expand market share."
+            "Impression Share Competition", 
+            options=['Low', 'Medium', 'High'],
+            value='Medium',
+            help="Describes the level of competitive landscape for market share."
         )
         conversion_rate_sensitivity = st.select_slider(
-            "Market Sensitivity", 
-            options=['Conservative', 'Balanced', 'Competitive'],
-            value='Balanced',
-            help="Describes how conversion rates might change with market conditions."
+            "Conv. Rate Stability", 
+            options=['Reducing', 'Stable', 'Increasing'],
+            value='Stable',
+            help="Indicates the expected trend in conversion rates."
         )
         diminishing_returns = st.select_slider(
-            "Return Impact", 
-            options=['Low', 'Moderate', 'High'],
-            value='Moderate',
+            "Diminishing Returns", 
+            options=['Low', 'Medium', 'High'],
+            value='Medium',
             help="Indicates how quickly additional spending yields smaller returns."
         )
 
@@ -197,34 +213,37 @@ if st.button("Generate Forecast"):
             # Run forecast
             forecast = model.run_forecast()
             
-            # Metrics comparison section
-            st.subheader("Key Metrics Comparison")
+            # Annual Metrics Comparison
+            st.subheader("Annual Metrics Comparison")
             
             # Prepare comparison metrics
             metrics_to_compare = {
-                'Weekly Budget': ('Cost', 'Weekly_Budget'),
-                'Revenue': ('Revenue', 'Projected_Revenue'),
-                'Transactions': ('Transactions', 'Projected_Transactions'),
-                'ROAS': ('ROAS', 'Projected_ROAS')
+                'Annual Budget': ('Cost', 'Weekly_Budget'),
+                'Annual Revenue': ('Revenue', 'Projected_Revenue'),
+                'Annual Transactions': ('Transactions', 'Projected_Transactions'),
+                'Annual Clicks': ('Clicks', 'Projected_Clicks'),
+                'Annual ROAS': ('ROAS', 'Projected_ROAS')
             }
             
-            col1, col2, col3, col4 = st.columns(4)
+            col1, col2, col3, col4, col5 = st.columns(5)
             
             for i, (display_name, (historical_col, forecast_col)) in enumerate(metrics_to_compare.items()):
-                historical_value = data[historical_col].mean()
-                forecast_value = forecast[forecast_col].mean()
+                # Calculate annual totals
+                historical_value = data[historical_col].sum() if historical_col in data.columns else data[historical_col].mean() * 52
+                forecast_value = forecast[forecast_col].sum()
                 pct_change = ((forecast_value - historical_value) / historical_value) * 100
                 
-                with [col1, col2, col3, col4][i]:
+                with [col1, col2, col3, col4, col5][i]:
                     st.metric(
                         display_name, 
-                        f"{forecast_value:.2f}", 
-                        delta=f"{pct_change:.2f}%"
+                        f"{forecast_value:,.2f}", 
+                        delta=f"{pct_change:.2f}%",
+                        delta_color='inverse'
                     )
             
-            # Display forecast preview
+            # Forecast preview with scrollable table
             st.subheader("Forecast Preview")
-            st.dataframe(forecast.head())
+            st.dataframe(forecast.head(10), height=300)
             
             # Display charts
             col1, col2 = st.columns(2)
