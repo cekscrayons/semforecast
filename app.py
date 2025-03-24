@@ -111,23 +111,16 @@ if st.button("Generate Forecast"):
             
             # Add new parameter mappings
             try:
-                is_multiplier = map_slider_to_value(
+                # Directly map and assign advanced controls
+                model.impression_share_multiplier = map_slider_to_value(
                     impression_share_growth, 'impression_share_growth'
                 )
-                conv_sensitivity = map_slider_to_value(
+                model.conversion_rate_sensitivity = map_slider_to_value(
                     conversion_rate_sensitivity, 'conversion_rate_sensitivity'
                 )
-                dim_returns = map_slider_to_value(
+                model.diminishing_returns_factor = map_slider_to_value(
                     diminishing_returns, 'diminishing_returns'
                 )
-                
-                # Dynamically add attributes if the model supports them
-                if hasattr(model, 'impression_share_multiplier'):
-                    model.impression_share_multiplier = is_multiplier
-                if hasattr(model, 'conversion_rate_sensitivity'):
-                    model.conversion_rate_sensitivity = conv_sensitivity
-                if hasattr(model, 'diminishing_returns_factor'):
-                    model.diminishing_returns_factor = dim_returns
             except Exception as mapping_error:
                 st.warning(f"Could not apply advanced parameters: {mapping_error}")
             
@@ -164,7 +157,7 @@ if st.button("Generate Forecast"):
                             display_name, 
                             f"${forecast_value:.2f}", 
                             delta=f"{pct_change:.2f}%",
-                            delta_color='off'  # Removed color coding for now
+                            delta_color='off'
                         )
                     # Special handling for Clicks and Transactions (0 decimal places)
                     elif display_name in ['Annual Clicks', 'Annual Transactions']:
