@@ -14,7 +14,7 @@ st.set_page_config(
     page_icon="📊"
 )
 
-# Custom CSS for improved dark theme
+# Custom CSS for improved dark theme and white sliders
 st.markdown("""
 <style>
 .stApp {
@@ -22,6 +22,14 @@ st.markdown("""
 }
 .stSidebar {
     background-color: #1a1a1a;
+}
+/* White slider */
+div[data-baseweb="slider"] {
+    -webkit-appearance: none;
+    background: transparent;
+}
+div[data-baseweb="slider"] [role="slider"] {
+    background-color: white !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -102,28 +110,48 @@ st.title("SEM Budget Forecasting Tool")
 with st.sidebar:
     st.header("Forecast Configuration")
     
-    # Core parameters with sliders
-    min_roas = st.slider("Minimum ROAS Threshold ($)", 10, 30, 20, 1)
-    growth_factor = st.slider("YOY Growth Factor (%)", 0, 30, 10, 1) / 100 + 1.0
-    aov_growth = st.slider("YOY AOV Growth (%)", 0, 20, 5, 1) / 100 + 1.0
-    cpc_inflation = st.slider("YOY CPC Inflation (%)", 0, 15, 2, 1) / 100 + 1.0
+    # Core parameters with sliders and tooltips
+    min_roas = st.slider(
+        "Minimum ROAS Threshold ($)", 
+        10, 30, 20, 1, 
+        help="The minimum acceptable Return on Ad Spend. Lower values allow more aggressive spending."
+    )
+    growth_factor = st.slider(
+        "YOY Growth Factor (%)", 
+        0, 30, 10, 1, 
+        help="Percentage increase in year-over-year performance. Higher values indicate more ambitious growth targets."
+    ) / 100 + 1.0
+    aov_growth = st.slider(
+        "YOY AOV Growth (%)", 
+        0, 20, 5, 1, 
+        help="Average Order Value growth percentage. Reflects expected increase in customer spending."
+    ) / 100 + 1.0
+    cpc_inflation = st.slider(
+        "YOY CPC Inflation (%)", 
+        0, 15, 2, 1, 
+        help="Cost Per Click inflation rate. Accounts for increasing digital advertising costs."
+    ) / 100 + 1.0
     
-    # Advanced options with categorical sliders
-    impression_share_growth = st.select_slider(
-        "Impression Share", 
-        options=['Conservative', 'Moderate', 'Aggressive'],
-        value='Moderate'
-    )
-    conversion_rate_sensitivity = st.select_slider(
-        "Market Sensitivity", 
-        options=['Conservative', 'Balanced', 'Competitive'],
-        value='Balanced'
-    )
-    diminishing_returns = st.select_slider(
-        "Return Impact", 
-        options=['Low', 'Moderate', 'High'],
-        value='Moderate'
-    )
+    # Advanced options in an expander
+    with st.expander("Advanced Options"):
+        impression_share_growth = st.select_slider(
+            "Impression Share", 
+            options=['Conservative', 'Moderate', 'Aggressive'],
+            value='Moderate',
+            help="Controls how aggressively the model can expand market share."
+        )
+        conversion_rate_sensitivity = st.select_slider(
+            "Market Sensitivity", 
+            options=['Conservative', 'Balanced', 'Competitive'],
+            value='Balanced',
+            help="Describes how conversion rates might change with market conditions."
+        )
+        diminishing_returns = st.select_slider(
+            "Return Impact", 
+            options=['Low', 'Moderate', 'High'],
+            value='Moderate',
+            help="Indicates how quickly additional spending yields smaller returns."
+        )
 
 # File uploader
 uploaded_file = st.file_uploader("Upload CSV with historical SEM data", type=['csv'])
@@ -169,14 +197,34 @@ if st.button("Generate Forecast"):
             # Run forecast
             forecast = model.run_forecast()
             
+            # Metrics comparison section
+            st.subheader("Key Metrics Comparison")
+            
+            # Prepare comparison metrics
+            metrics_to_compare = {
+                'Weekly Budget': ('Cost', 'Weekly_Budget'),
+                'Revenue': ('Revenue', 'Projected_Revenue'),
+                'Transactions': ('Transactions', 'Projected_Transactions'),
+                'ROAS': ('ROAS', 'Projected_ROAS')
+            }
+            
+            col1, col2, col3, col4 = st.columns(4)
+            
+            for i, (display_name, (historical_col, forecast_col)) in enumerate(metrics_to_compare.items()):
+                historical_value = data[historical_col].mean()
+                forecast_value = forecast[forecast_col].mean()
+                pct_change = ((forecast_value - historical_value) / historical_value) * 100
+                
+                with [col1, col2, col3, col4][i]:
+                    st.metric(
+                        display_name, 
+                        f"{forecast_value:.2f}", 
+                        delta=f"{pct_change:.2f}%"
+                    )
+            
             # Display forecast preview
             st.subheader("Forecast Preview")
             st.dataframe(forecast.head())
-            
-            # Get summary statistics
-            summary = model.get_summary_stats()
-            st.write("Summary Statistics:")
-            st.write(summary)
             
             # Display charts
             col1, col2 = st.columns(2)
