@@ -1,8 +1,6 @@
 import streamlit as st
 import pandas as pd
 import io
-import plotly.graph_objs as go
-import plotly.express as px
 
 # Import the forecast model
 from sem_forecast_model import SEMForecastModel, load_data_from_csv
@@ -13,54 +11,6 @@ st.set_page_config(
     layout="wide", 
     page_icon="📊"
 )
-
-def create_comparison_chart(historical_data, forecast_data, metric):
-    # Prepare historical data
-    historical = historical_data[['Week', metric]].copy()
-    historical['Type'] = 'Actual'
-    
-    # Prepare forecast data
-    forecast = forecast_data[['Week', 'Weekly_Budget' if metric == 'Cost' else 'Projected_Revenue']].copy()
-    forecast = forecast.rename(columns={'Weekly_Budget' if metric == 'Cost' else 'Projected_Revenue': metric})
-    forecast['Type'] = 'Forecast'
-    
-    # Combine datasets
-    combined_data = pd.concat([historical, forecast])
-    
-    # Create Plotly figure
-    fig = go.Figure()
-    
-    # Actual data (light grey)
-    actual_data = combined_data[combined_data['Type'] == 'Actual']
-    fig.add_trace(go.Scatter(
-        x=actual_data['Week'], 
-        y=actual_data[metric],
-        mode='lines',
-        name='Actual',
-        line=dict(color='#666666', width=2)
-    ))
-    
-    # Forecast data (bright green)
-    forecast_data = combined_data[combined_data['Type'] == 'Forecast']
-    fig.add_trace(go.Scatter(
-        x=forecast_data['Week'], 
-        y=forecast_data[metric],
-        mode='lines',
-        name='Forecast',
-        line=dict(color='#42f554', width=3)
-    ))
-    
-    # Customize layout
-    fig.update_layout(
-        title=f'Historical vs Forecasted Weekly {metric.capitalize()}',
-        xaxis_title='Week',
-        yaxis_title=f'{metric.capitalize()} ($)',
-        plot_bgcolor='rgba(0,0,0,0)',
-        paper_bgcolor='rgba(0,0,0,0)',
-        font_color='white'
-    )
-    
-    return fig
 
 # Mapping function
 def map_slider_to_value(slider_value, parameter_type):
@@ -214,7 +164,7 @@ if st.button("Generate Forecast"):
                             display_name, 
                             f"${forecast_value:.2f}", 
                             delta=f"{pct_change:.2f}%",
-                            delta_color='inverse'
+                            delta_color='off'  # Removed color coding for now
                         )
                     # Special handling for Clicks and Transactions (0 decimal places)
                     elif display_name in ['Annual Clicks', 'Annual Transactions']:
@@ -222,7 +172,7 @@ if st.button("Generate Forecast"):
                             display_name, 
                             f"{forecast_value:,.0f}", 
                             delta=f"{pct_change:.2f}%",
-                            delta_color='normal'
+                            delta_color='off'
                         )
                     # Default handling for other metrics
                     else:
@@ -230,23 +180,12 @@ if st.button("Generate Forecast"):
                             display_name, 
                             f"{forecast_value:,.2f}", 
                             delta=f"{pct_change:.2f}%",
-                            delta_color='normal'
+                            delta_color='off'
                         )
             
             # Forecast preview with scrollable table
             st.subheader("Forecast Preview")
             st.dataframe(forecast, height=400)
-            
-            # Display charts
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                spend_chart = create_comparison_chart(data, forecast, 'Cost')
-                st.plotly_chart(spend_chart, use_container_width=True)
-            
-            with col2:
-                revenue_chart = create_comparison_chart(data, forecast, 'Revenue')
-                st.plotly_chart(revenue_chart, use_container_width=True)
             
             # Create download button for forecast
             csv_buffer = io.StringIO()
