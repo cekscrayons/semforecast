@@ -62,6 +62,27 @@ def create_comparison_chart(historical_data, forecast_data, metric):
     
     return fig
 
+# Mapping function
+def map_slider_to_value(slider_value, parameter_type):
+    mappings = {
+        'impression_share_growth': {
+            'Low': 1.1,
+            'Medium': 1.5,
+            'High': 2.0
+        },
+        'conversion_rate_sensitivity': {
+            'Reducing': 0.95,
+            'Stable': 0.85,
+            'Increasing': 0.75
+        },
+        'diminishing_returns': {
+            'Low': 0.95,
+            'Medium': 0.85,
+            'High': 0.75
+        }
+    }
+    return mappings[parameter_type][slider_value]
+
 # Main Streamlit app
 st.title("Annual SEM Budget Forecasting Tool")
 
@@ -193,7 +214,7 @@ if st.button("Generate Forecast"):
                             display_name, 
                             f"${forecast_value:.2f}", 
                             delta=f"{pct_change:.2f}%",
-                            delta_color='inverse'
+                            delta_color='red' if pct_change < 0 else 'green'
                         )
                     # Special handling for Clicks and Transactions (0 decimal places)
                     elif display_name in ['Annual Clicks', 'Annual Transactions']:
