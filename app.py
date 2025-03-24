@@ -23,33 +23,12 @@ st.markdown("""
 .stSidebar {
     background-color: #1a1a1a;
 }
-/* Replace red with blue for slider progress */
+/* Make entire slider progress blue */
 .stSlider > div > div > div {
     background-color: #1b79ff !important;
 }
 </style>
 """, unsafe_allow_html=True)
-
-# Mapping function
-def map_slider_to_value(slider_value, parameter_type):
-    mappings = {
-        'impression_share_growth': {
-            'Low': 1.1,
-            'Medium': 1.5,
-            'High': 2.0
-        },
-        'conversion_rate_sensitivity': {
-            'Reducing': 0.95,
-            'Stable': 0.85,
-            'Increasing': 0.75
-        },
-        'diminishing_returns': {
-            'Low': 0.95,
-            'Medium': 0.85,
-            'High': 0.75
-        }
-    }
-    return mappings[parameter_type][slider_value]
 
 def create_comparison_chart(historical_data, forecast_data, metric):
     # Prepare historical data
