@@ -23,9 +23,9 @@ st.markdown("""
 .stSidebar {
     background-color: #1a1a1a;
 }
-/* Make entire slider progress blue */
-.stSlider > div > div > div {
-    background-color: #1b79ff !important;
+/* Specifically target and color the entire slider track */
+.stSlider > div > div > div[data-baseweb="slider"] {
+    background: linear-gradient(to right, #1b79ff 0%, #1b79ff 100%) !important;
 }
 </style>
 """, unsafe_allow_html=True)
