@@ -23,21 +23,9 @@ st.markdown("""
 .stSidebar {
     background-color: #1a1a1a;
 }
-/* Specifically target slider track and progress */
+/* Replace red with blue for slider progress */
 .stSlider > div > div > div {
     background-color: #1b79ff !important;
-    height: 6px !important;
-}
-/* Slider thumb */
-.stSlider div[role="slider"] {
-    background-color: white !important;
-    border: 2px solid #1b79ff !important;
-}
-/* Slider value label */
-.stSlider > div > div > div > div > div {
-    background-color: white !important;
-    color: #1b79ff !important;
-    border: 1px solid #1b79ff !important;
 }
 </style>
 """, unsafe_allow_html=True)
