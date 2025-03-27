@@ -45,6 +45,11 @@ class SEMForecastModel:
         self.yoy_growth = yoy_growth
         self.yoy_cpc_inflation = yoy_cpc_inflation
         self.yoy_aov_growth = yoy_aov_growth
+        
+        # Initialize the advanced parameters with default values
+        self.impression_share_multiplier = 1.5  # Medium (default)
+        self.conversion_rate_sensitivity = 0.85  # Stable (default)
+        self.diminishing_returns_factor = 0.85  # Medium (default)
 
         # Ensure Week is datetime
         if not pd.api.types.is_datetime64_any_dtype(self.data['Week']):
@@ -100,6 +105,10 @@ class SEMForecastModel:
         # Account for already-high CPCs and low ROAS headroom
         def calculate_is_multiplier(row):
             base_multiplier = row['Potential_Impr_Share'] / row['Impr_Share'] if row['Impr_Share'] > 0 else 1.0
+            
+            # Apply the external impression_share_multiplier to base_multiplier
+            # This will boost or reduce the multiplier based on the advanced control setting
+            base_multiplier = base_multiplier * self.impression_share_multiplier / 1.5  # Normalized to default of 1.5
 
             # UPDATED: More conservative caps on impression share growth
             # Extreme Lost IS Budget requires more caution
@@ -209,16 +218,20 @@ class SEMForecastModel:
         """
 
         def calculate_conversion_scaling(row):
-            # UPDATED: Instead of increasing with spend, conversion rates now decline
-            # as you capture more impression share and reach less qualified users
+            # Use the externally provided conversion_rate_sensitivity
+            # The sensitivity factor affects how much conversion rates decline with increasing spend
+            sensitivity_factor = self.conversion_rate_sensitivity
+            
+            # Lower factor (like 0.75) makes conversion rates more sensitive to increased spend
+            # Higher factor (like 0.95) makes conversion rates less sensitive to increased spend
             if row['Cost'] <= 7500:
                 base_scaling = 1.0  # Baseline conversion rate
             elif row['Cost'] <= 15000:
-                base_scaling = 0.95  # 5% decrease in conversion rates
+                base_scaling = 1.0 - (0.05 * (0.85 / sensitivity_factor))  # Adjusted decrease
             elif row['Cost'] <= 30000:
-                base_scaling = 0.90  # 10% decrease in conversion rates
+                base_scaling = 1.0 - (0.10 * (0.85 / sensitivity_factor))  # Adjusted decrease
             else:
-                base_scaling = 0.85  # 15% decrease in conversion rates at high spend
+                base_scaling = 1.0 - (0.15 * (0.85 / sensitivity_factor))  # Adjusted decrease
 
             # For Black Friday periods, even with higher spend, conversion intent might be stronger
             if row['Is_BlackFriday']:
@@ -237,28 +250,31 @@ class SEMForecastModel:
         """
 
         def calculate_diminishing_returns_factor(row):
+            # Use the class property for diminishing returns
+            external_factor = self.diminishing_returns_factor
+            
             # Check for high-performing weeks first - these get special treatment
             if 'Performance_Tier' in row:
                 # Relaxed diminishing returns for high-performing weeks
                 if row['Performance_Tier'] == 'Exceptional':
                     # Almost no diminishing returns for exceptional weeks
-                    return 0.98
+                    return 0.98 * (external_factor / 0.85)  # Normalize to default 0.85
                 elif row['Performance_Tier'] == 'Excellent':
                     # Very minimal diminishing returns for excellent weeks
-                    return 0.95
+                    return 0.95 * (external_factor / 0.85)
                 elif row['Performance_Tier'] == 'Strong' and row['ROAS_Headroom'] > 0.5:
                     # Reduced diminishing returns for strong weeks with good headroom
-                    return 0.92
+                    return 0.92 * (external_factor / 0.85)
 
-            # Standard diminishing returns factors for normal weeks
+            # Standard diminishing returns factors for normal weeks - adjusted by external factor
             if row['Adjusted_Cost'] <= 20000:
                 base_factor = 1.0  # No diminishing returns at lower spend levels
             elif row['Adjusted_Cost'] <= 40000:
-                base_factor = 0.92  # More aggressive (was 0.95)
+                base_factor = 0.92 * (external_factor / 0.85)
             elif row['Adjusted_Cost'] <= 80000:
-                base_factor = 0.84  # More aggressive (was 0.90)
+                base_factor = 0.84 * (external_factor / 0.85)
             else:
-                base_factor = 0.76  # More aggressive (was 0.85)
+                base_factor = 0.76 * (external_factor / 0.85)
 
             # Apply much stronger diminishing returns for specific scenarios
             # UPDATED: More aggressive special case handling
